@@ -112,7 +112,7 @@ const Login = ({ setUsuario }) => {
           </Button>
 
           <Text fontSize="sm" color="gray.400" mt={2}>
-            Usuarios demo: admin@empresa.com / empleado@empresa.com
+            Usuarios demo: admin@empresa.com / empleado@empresa.com / Contraseñas: admin123 / empleado123
           </Text>
         </VStack>
       </Box>
