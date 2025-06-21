@@ -99,22 +99,28 @@ const Compras = () => {
 const manejarCambio = (e) => {
   const { name, value } = e.target;
 
-  // Si cambia el producto, buscamos el precio unitario en productosProveedor
-  if (name === "producto") {
-    const productoSeleccionado = productosProveedor.find((p) => p.id === value);
-     console.log("Producto seleccionado:", productoSeleccionado); // 👈
+  setNuevaCompra((prev) => {
+    let nuevoEstado = {
+      ...prev,
+      [name]: value,
+    };
 
-    setNuevaCompra((prev) => ({
-      ...prev,
-      [name]: value,
-      precioUnitario: productoSeleccionado?.precioCosto || 0,
-    }));
-  } else {
-    setNuevaCompra((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  }
+    // Si cambia el producto, buscá el precio y actualizalo
+    if (name === "producto") {
+      const productoSeleccionado = productosProveedor.find((p) => p.id === value);
+      const precioUnitario = productoSeleccionado?.precioCosto || 0;
+
+      nuevoEstado.precioUnitario = precioUnitario;
+      nuevoEstado.total = precioUnitario * prev.cantidad;
+
+    } else if (name === "cantidad" || name === "precioUnitario") {
+      const cantidad = name === "cantidad" ? value : prev.cantidad;
+      const precioUnitario = name === "precioUnitario" ? value : prev.precioUnitario;
+      nuevoEstado.total = parseFloat(cantidad || 0) * parseFloat(precioUnitario || 0);
+    }
+
+    return nuevoEstado;
+  });
 };
 
 
