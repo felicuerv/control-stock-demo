@@ -187,72 +187,84 @@ const manejarCambio = (e) => {
     onClose();
   };
 
-  const manejarSubmit = async (c) => {
-    c.preventDefault();
-  
-    const { fecha, producto, cantidad, precioUnitario, total, metodoPago, observaciones } = nuevaCompra;
-  
-    if (!producto || !cantidad || !precioUnitario || !metodoPago || !total || !fecha || !proveedorSeleccionado) {
-      toast({ title: "Faltan campos", status: "warning", duration: 3000 });
-      return;
-    }
-  
-    // Obtener nombre del proveedor a partir del ID seleccionado
-    const proveedor = proveedores.find((p) => p.id === proveedorSeleccionado);
-  
-    const compraData = {
-      fecha,
-      producto,
-      cantidad: Number(cantidad),
-      precioUnitario: Number(precioUnitario),
-      total: Number(total),
-      metodoPago,
-      observaciones,
-      proveedorId: proveedor?.id || "",
-      proveedorNombre: proveedor?.nombre || "",
-    };
-  
-    try {
-      if (editandoId) {
-        await updateDoc(doc(db, "compras", editandoId), compraData);
-        toast({ title: "Compra actualizada", status: "success" });
-      } else {
-        compraData.fechaAlta = new Date().toISOString();
-        await addDoc(comprasRef, compraData);
-        // Paso 1: Buscar el producto relacionado
-        const productoQuery = query(
-          collection(db, "productos"),
-          where("nombre", "==", compraData.producto),
-          where("proveedorNombre", "==", compraData.proveedorNombre)
-        );
+const manejarSubmit = async (c) => {
+  c.preventDefault();
 
-        const productoSnapshot = await getDocs(productoQuery);
+  const {
+    fecha,
+    producto: productoId,
+    cantidad,
+    precioUnitario,
+    total,
+    metodoPago,
+    observaciones,
+  } = nuevaCompra;
 
-        if (!productoSnapshot.empty) {
-          const productoDoc = productoSnapshot.docs[0];
-          const productoData = productoDoc.data();
+  if (
+    !productoId ||
+    !cantidad ||
+    !precioUnitario ||
+    !metodoPago ||
+    !total ||
+    !fecha ||
+    !proveedorSeleccionado
+  ) {
+    toast({ title: "Faltan campos", status: "warning", duration: 3000 });
+    return;
+  }
 
-          // Paso 2: Calcular el nuevo stock
-          const nuevoStock = (productoData.stock || 0) + compraData.cantidad;
+  // Obtener proveedor y producto seleccionados
+  const proveedor = proveedores.find((p) => p.id === proveedorSeleccionado);
+  const producto = productos.find((p) => p.id === productoId);
 
-          // Paso 3: Actualizar en Firestore
-          await updateDoc(doc(db, "productos", productoDoc.id), {
-            stock: nuevoStock,
-          });
-
-          toast({ title: "Stock actualizado", status: "success" });
-        } else {
-          toast({ title: "Producto no encontrado para actualizar stock", status: "warning" });
-        }
-
-        toast({ title: "Compra agregada", status: "success" });
-      }
-      limpiarFormulario();
-      obtenerCompras();
-    } catch (err) {
-      toast({ title: "Error", description: err.message, status: "error" });
-    }
+  const compraData = {
+    fecha,
+    producto: producto?.nombre || "",        // Guardamos el nombre
+    productoId: productoId,                   // También guardamos el ID
+    cantidad: Number(cantidad),
+    precioUnitario: Number(precioUnitario),
+    total: Number(total),
+    metodoPago,
+    observaciones,
+    proveedorId: proveedor?.id || "",
+    proveedorNombre: proveedor?.nombre || "",
   };
+
+  try {
+    if (editandoId) {
+      await updateDoc(doc(db, "compras", editandoId), compraData);
+      toast({ title: "Compra actualizada", status: "success" });
+    } else {
+      compraData.fechaAlta = new Date().toISOString();
+      await addDoc(comprasRef, compraData);
+
+      // 🔁 Actualizamos stock usando el ID del producto
+      const productoDocRef = doc(db, "productos", productoId);
+      const productoDocSnap = await getDoc(productoDocRef);
+
+      if (productoDocSnap.exists()) {
+        const productoData = productoDocSnap.data();
+        const nuevoStock = (productoData.stock || 0) + compraData.cantidad;
+
+        await updateDoc(productoDocRef, {
+          stock: nuevoStock,
+        });
+
+        toast({ title: "Stock actualizado", status: "success" });
+      } else {
+        toast({ title: "Producto no encontrado para actualizar stock", status: "warning" });
+      }
+
+      toast({ title: "Compra agregada", status: "success" });
+    }
+
+    limpiarFormulario();
+    obtenerCompras();
+  } catch (err) {
+    toast({ title: "Error", description: err.message, status: "error" });
+  }
+};
+
   
   const importarCompras = async (comprasExcel) => {
     setCargandoMasivo(true);
