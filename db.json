@@ -1,0 +1,15 @@
+{
+  "productos": [
+    { "id": 1, "nombre": "Manzana", "stock": 50 },
+    { "id": 2, "nombre": "Banana", "stock": 30 },
+    { "id": 3, "nombre": "Leche", "stock": 20 }
+  ],
+  "ventas": [
+    { "id": 1, "productoId": 1, "cantidad": 5 },
+    { "id": 2, "productoId": 2, "cantidad": 2 }
+  ],
+  "servicios": [
+    { "id": 1, "nombre": "Envío", "precio": 500 },
+    { "id": 2, "nombre": "Armado de pedidos", "precio": 1500 }
+  ]
+}
